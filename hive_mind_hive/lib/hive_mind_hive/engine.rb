@@ -1,7 +1,7 @@
 module HiveMindHive
   class Engine < ::Rails::Engine
     config.generators do |g|
-      g.test_framework      :rspec,        :fixture => false
+      g.test_framework :rspec, fixture: false
       g.assets false
       g.helper false
     end
@@ -16,7 +16,7 @@ module HiveMindHive
     end
 
     initializer :assets do |app|
-      app.config.assets.precompile += %w( hive_mind_hive.js )
+      app.config.assets.precompile += %w[hive_mind_hive.js]
     end
   end
 end

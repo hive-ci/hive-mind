@@ -1,4 +1,4 @@
-require "hive_mind_generic/engine"
+require 'hive_mind_generic/engine'
 
 module HiveMindGeneric
 end

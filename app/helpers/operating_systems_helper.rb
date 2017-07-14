@@ -1,5 +1,5 @@
 module OperatingSystemsHelper
-  def display_operating_system arg
+  def display_operating_system(arg)
     if arg.nil?
       '??OS??'
     elsif arg.is_a? Device

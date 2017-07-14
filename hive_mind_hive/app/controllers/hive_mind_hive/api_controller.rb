@@ -7,10 +7,10 @@ module HiveMindHive
     def connect
       response = {}
       status = :ok
-      if ! params[:connection][:hive_id]
+      if !params[:connection][:hive_id]
         response[:error] = 'Missing hive id'
         status = :unprocessable_entity
-      elsif ! params[:connection][:device_id]
+      elsif !params[:connection][:device_id]
         response[:error] = 'Missing device id'
         status = :unprocessable_entity
       else
@@ -31,10 +31,10 @@ module HiveMindHive
     def disconnect
       response = {}
       status = :ok
-      if ! params[:connection][:hive_id]
+      if !params[:connection][:hive_id]
         response[:error] = 'Missing hive id'
         status = :unprocessable_entity
-      elsif ! params[:connection][:device_id]
+      elsif !params[:connection][:device_id]
         response[:error] = 'Missing device id'
         status = :unprocessable_entity
       else

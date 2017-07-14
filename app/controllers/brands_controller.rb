@@ -1,13 +1,13 @@
 class BrandsController < ApplicationController
-  before_action :set_brand, only: [:show, :edit, :update, :destroy]
+  before_action :set_brand, only: %i[show edit update destroy]
 
   # GET /brands
   # GET /brands.json
   def index
-    @brands = Brand.all    
+    @brands = Brand.all
     if params[:device_type] && params[:device_type] != ''
       @device_type = DeviceType.find(params[:device_type].to_i)
-      @brands = @brands.select { |b| b.models.collect { |m| m.device_type }.include? @device_type }
+      @brands = @brands.select { |b| b.models.collect(&:device_type).include? @device_type }
     end
   end
 
@@ -16,10 +16,10 @@ class BrandsController < ApplicationController
   def show
     if params[:device_type] && params[:device_type] != ''
       @device_type = DeviceType.find(params[:device_type].to_i)
-      @models = @brand.models.where( device_type: @device_type )
-      @devices = @models.collect {|m| m.devices }.flatten.uniq
+      @models = @brand.models.where(device_type: @device_type)
+      @devices = @models.collect(&:devices).flatten.uniq
     else
-      @devices = @brand.models.collect {|m| m.devices }.flatten.uniq
+      @devices = @brand.models.collect(&:devices).flatten.uniq
     end
   end
 
@@ -29,8 +29,7 @@ class BrandsController < ApplicationController
   end
 
   # GET /brands/1/edit
-  def edit
-  end
+  def edit; end
 
   # POST /brands
   # POST /brands.json
@@ -39,7 +38,7 @@ class BrandsController < ApplicationController
 
     respond_to do |format|
       if @brand.save
-        format.html { redirect_to brand_url( @brand, protocol: redirect_protocol ), notice: 'Brand was successfully created.' }
+        format.html { redirect_to brand_url(@brand, protocol: redirect_protocol), notice: 'Brand was successfully created.' }
         format.json { render :show, status: :created, location: @brand }
       else
         format.html { render :new }
@@ -67,19 +66,20 @@ class BrandsController < ApplicationController
   def destroy
     @brand.destroy
     respond_to do |format|
-      format.html { redirect_to brands_url(protocol: redirect_protocol), notice: 'Brand was successfully destroyed.'}
+      format.html { redirect_to brands_url(protocol: redirect_protocol), notice: 'Brand was successfully destroyed.' }
       format.json { head :no_content }
     end
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_brand
-      @brand = Brand.find(params[:id])
-    end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def brand_params
-      params.require(:brand).permit(:name, :display_name, :alternative)
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_brand
+    @brand = Brand.find(params[:id])
+  end
+
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def brand_params
+    params.require(:brand).permit(:name, :display_name, :alternative)
+  end
 end

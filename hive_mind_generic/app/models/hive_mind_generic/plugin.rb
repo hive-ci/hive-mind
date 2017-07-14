@@ -4,18 +4,18 @@ module HiveMindGeneric
     has_many :characteristics
 
     def name
-      "Generic Device #{self.id}"
+      "Generic Device #{id}"
     end
 
     def details
-      Hash[self.characteristics.map{ |c| [ c.key, c.value ] }]
+      Hash[characteristics.map { |c| [c.key, c.value] }]
     end
 
     def update(*args)
       super *HiveMindGeneric::Plugin.extract_characteristics(args)
     end
 
-    def self.plugin_params params
+    def self.plugin_params(params)
       params
     end
 
@@ -26,11 +26,13 @@ module HiveMindGeneric
     private
 
     def self.extract_characteristics(a = nil)
-      a[0] = {
-        characteristics: a[0].keys.map { |k|
-                           Characteristic.new(key: k, value: a[0][k])
-                         }
-      } if a[0]
+      if a[0]
+        a[0] = {
+          characteristics: a[0].keys.map do |k|
+            Characteristic.new(key: k, value: a[0][k])
+          end
+        }
+      end
       a
     end
   end

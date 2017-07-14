@@ -24,9 +24,9 @@ gem 'paperclip', '~> 4.3'
 gem 'd3-rails'
 gem 'chamber'
 gem 'validates_lengths_from_database'
+gem 'mysql2', '~> 0.4.6'
 
 group :development, :test, :integration do
-  gem 'sqlite3'
   gem 'pry-byebug'
   gem 'rspec-rails', '~> 3.3'
   gem 'timecop'
@@ -44,5 +44,4 @@ end
 
 group :production do
   gem 'aws-sdk', '~> 1.6'
-  gem 'mysql2', '~> 0.3.20'
 end

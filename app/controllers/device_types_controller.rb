@@ -1,5 +1,5 @@
 class DeviceTypesController < ApplicationController
-  before_action :set_device_type, only: [:show, :edit, :update, :destroy]
+  before_action :set_device_type, only: %i[show edit update destroy]
 
   # GET /browse
   def browse
@@ -12,8 +12,7 @@ class DeviceTypesController < ApplicationController
   end
 
   # GET /device_types/1/edit
-  def edit
-  end
+  def edit; end
 
   # POST /device_types
   # POST /device_types.json
@@ -56,13 +55,14 @@ class DeviceTypesController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_device_type
-      @device_type = DeviceType.find(params[:id])
-    end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def device_type_params
-      params.require(:device_type).permit(:classification, :description)
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_device_type
+    @device_type = DeviceType.find(params[:id])
+  end
+
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def device_type_params
+    params.require(:device_type).permit(:classification, :description)
+  end
 end

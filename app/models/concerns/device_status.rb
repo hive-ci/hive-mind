@@ -7,7 +7,7 @@ module DeviceStatus
   def status
     # Very basic first implementation of statuses
     last_hb = seconds_since_heartbeat
-    if last_hb.nil?   
+    if last_hb.nil?
       :unknown
     elsif last_hb > 600
       in_a_hive? ? :dead : :unknown
@@ -17,12 +17,10 @@ module DeviceStatus
       in_a_hive? ? :happy : :visible
     end
   end
-  
+
   def in_a_hive?
     if defined? HiveMindHive
-      if !@hive
-        @hive = HiveMindHive::Plugin.find_by_connected_device(self)
-      end
+      @hive = HiveMindHive::Plugin.find_by_connected_device(self) unless @hive
     end
     !@hive.nil?
   end
@@ -55,8 +53,9 @@ module DeviceStatus
   end
 
   private
+
   def max_state
-    @max_state ||= self.device_states.max
+    @max_state ||= device_states.max
     @max_state ? @max_state : DeviceState.new(state: 'info')
   end
 end
