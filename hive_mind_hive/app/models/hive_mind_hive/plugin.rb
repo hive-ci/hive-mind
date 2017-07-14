@@ -7,43 +7,43 @@ module HiveMindHive
     def self.create(*args)
       copy = ActionController::Parameters.new(args[0])
       args[0] = copy.permit(:hostname)
-      [:runner_version_history, :runner_plugin_version_history].each do |key|
-        args[0][key] = copy[key] if copy.has_key?(key)
+      %i[runner_version_history runner_plugin_version_history].each do |key|
+        args[0][key] = copy[key] if copy.key?(key)
       end
 
       hive = super(*args)
-      hive.update_version(copy['version']) if copy.has_key?('version')
-      hive.update_runner_plugins(copy['runner_plugins']) if copy.has_key?('runner_plugins')
+      hive.update_version(copy['version']) if copy.key?('version')
+      hive.update_runner_plugins(copy['runner_plugins']) if copy.key?('runner_plugins')
       hive
     end
 
     def update(*args)
       copy = ActionController::Parameters.new(args[0])
       args[0] = copy.permit(:hostname)
-      [:runner_version_history, :runner_plugin_version_history].each do |key|
-        args[0][key] = copy[key] if copy.has_key?(key)
+      %i[runner_version_history runner_plugin_version_history].each do |key|
+        args[0][key] = copy[key] if copy.key?(key)
       end
 
-      self.update_version(copy['version']) if copy.has_key?('version')
-      self.update_runner_plugins(copy['runner_plugins']) if copy.has_key?('runner_plugins')
+      update_version(copy['version']) if copy.key?('version')
+      update_runner_plugins(copy['runner_plugins']) if copy.key?('runner_plugins')
       super(*args)
     end
 
     def name
-      self.hostname
+      hostname
     end
 
     def version
-      history = self.runner_version_history.where(end_timestamp: nil).order(start_timestamp: :desc)
-      history.length > 0 ? history.first.runner_version.version : nil
+      history = runner_version_history.where(end_timestamp: nil).order(start_timestamp: :desc)
+      !history.empty? ? history.first.runner_version.version : nil
     end
 
-    def update_version version
+    def update_version(version)
       if version != self.version
-        if self.runner_version_history.length > 0
-          self.runner_version_history.last.end_timestamp = Time.now
+        unless runner_version_history.empty?
+          runner_version_history.last.end_timestamp = Time.now
         end
-        self.runner_version_history << RunnerVersionHistory.create(
+        runner_version_history << RunnerVersionHistory.create(
           runner_version: RunnerVersion.find_or_create_by(version: version),
           start_timestamp: Time.now
         )
@@ -51,12 +51,12 @@ module HiveMindHive
     end
 
     def runner_plugins
-      Hash[self.runner_plugin_version_history.where(end_timestamp: nil).map{ |h| [ h.runner_plugin_version.name, h.runner_plugin_version.version ] }]
+      Hash[runner_plugin_version_history.where(end_timestamp: nil).map { |h| [h.runner_plugin_version.name, h.runner_plugin_version.version] }]
     end
 
-    def update_runner_plugins plugins = {}
-      self.runner_plugin_version_history.select{ |h| h.end_timestamp == nil }.each do |h|
-        if plugins.has_key? h.runner_plugin_version.name and plugins[h.runner_plugin_version.name] == h.runner_plugin_version.version
+    def update_runner_plugins(plugins = {})
+      runner_plugin_version_history.select { |h| h.end_timestamp.nil? }.each do |h|
+        if plugins.key?(h.runner_plugin_version.name) && plugins[h.runner_plugin_version.name] == h.runner_plugin_version.version
           plugins.delete(h.runner_plugin_version.name)
         else
           h.end_timestamp = Time.now
@@ -65,7 +65,7 @@ module HiveMindHive
       end
 
       plugins.each_pair do |p, v|
-        self.runner_plugin_version_history << RunnerPluginVersionHistory.create(
+        runner_plugin_version_history << RunnerPluginVersionHistory.create(
           runner_plugin_version: RunnerPluginVersion.find_or_create_by(
             name: p,
             version: v
@@ -77,23 +77,23 @@ module HiveMindHive
 
     def details
       {
-        'version' => self.version,
-        'runner_plugins' => self.runner_plugins
+        'version' => version,
+        'runner_plugins' => runner_plugins
       }
     end
 
     def json_keys
-      [ :version, :connected_devices ]
+      %i[version connected_devices]
     end
 
-    def connect device
+    def connect(device)
       if (h = Plugin.find_by_connected_device(device)) && (h != self)
         h.plugin.disconnect device
       end
       self.device.add_relation 'connected', device
     end
 
-    def disconnect device
+    def disconnect(device)
       self.device.delete_relation 'connected', device
     end
 
@@ -101,11 +101,11 @@ module HiveMindHive
       device.related_devices
     end
 
-    def self.plugin_params params
-      params.permit(:hostname, :version).merge(params.select { |key, value| key.to_s.match(/^runner_plugins$/) })
+    def self.plugin_params(params)
+      params.permit(:hostname, :version).merge(params.select { |key, _value| key.to_s.match(/^runner_plugins$/) })
     end
 
-    def self.find_by_connected_device device
+    def self.find_by_connected_device(device)
       if r = Relationship.where(secondary: device).first
         r.primary
       end

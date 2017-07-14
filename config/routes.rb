@@ -1,9 +1,8 @@
 Rails.application.routes.draw do
-  
-  get '/' => "device_types#browse"
-  get '/devices/search' => "devices#search"
-  get '/dash/:ids' => "devices#dash"
-  get 'browse' => "device_types#browse"
+  get '/' => 'device_types#browse'
+  get '/devices/search' => 'devices#search'
+  get '/dash/:ids' => 'devices#dash'
+  get 'browse' => 'device_types#browse'
   get '/status' => 'application#status'
 
   resources :device_types
@@ -21,7 +20,7 @@ Rails.application.routes.draw do
 
   get '/status' => 'api/status#show'
 
-  namespace :api, only: [ ], defaults: { format: :json } do
+  namespace :api, only: [], defaults: { format: :json } do
     resources :devices do
       collection do
         post 'register'

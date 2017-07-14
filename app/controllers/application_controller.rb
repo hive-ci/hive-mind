@@ -14,9 +14,9 @@ class ApplicationController < ActionController::Base
   end
 
   def status
-    head :ok, content_type: "text/html"
+    head :ok, content_type: 'text/html'
   end
-  
+
   def automatic_refresh
     if params[:refresh] && params[:refresh].to_i > 0
       params[:refresh].to_i * 1000
@@ -60,13 +60,11 @@ class ApplicationController < ActionController::Base
   def omniauth_credentials
     if omniauth_hash = request.env['omniauth.auth']
       {
-          provider:   omniauth_hash['provider'],
-          uid:        omniauth_hash['uid'],
-          email:      omniauth_hash['info']['email'],
-          name:       omniauth_hash['info']['name']
+        provider:   omniauth_hash['provider'],
+        uid:        omniauth_hash['uid'],
+        email:      omniauth_hash['info']['email'],
+        name:       omniauth_hash['info']['name']
       }
-    else
-      nil
     end
   end
 end

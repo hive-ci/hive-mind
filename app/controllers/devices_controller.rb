@@ -1,17 +1,17 @@
 class DevicesController < ApplicationController
-  before_action :set_device, only: [:edit, :update, :destroy]
+  before_action :set_device, only: %i[edit update destroy]
 
   # GET /devices
   # GET /devices.json
   def index
-    @devices = Device.includes(:ips, :macs, :brand, :plugin, :model => [:device_type] ).all.group_by { |d| d.model && d.model.device_type }
+    @devices = Device.includes(:ips, :macs, :brand, :plugin, model: [:device_type]).all.group_by { |d| d.model && d.model.device_type }
   end
-  
+
   def dash
-    ids = params[:ids].split(',').collect { |id| id.to_i }
-    @devices = Device.includes(:ips, :macs, :brand, :plugin, :model => [:device_type] ).where( id: ids )
+    ids = params[:ids].split(',').collect(&:to_i)
+    @devices = Device.includes(:ips, :macs, :brand, :plugin, model: [:device_type]).where(id: ids)
   end
-  
+
   def search
     @search_string = params[:search_string]
     @devices = Device.search(name_or_serial_or_model_name_cont: @search_string).result.distinct(:true)
@@ -22,7 +22,7 @@ class DevicesController < ApplicationController
   def show
     respond_to do |format|
       format.html do
-        @device = Device.includes(:ips, :macs, :model, :brand, :plugin, :hive_queues, :related_devices => [ :ips, :macs, :model, :brand, :plugin, :hive_queues ]).find(params['id'])
+        @device = Device.includes(:ips, :macs, :model, :brand, :plugin, :hive_queues, related_devices: %i[ips macs model brand plugin hive_queues]).find(params['id'])
       end
       format.json do
         if params[:view].present? && params[:view] == 'simple'
@@ -40,7 +40,11 @@ class DevicesController < ApplicationController
           }
           render json: @device
         else
-          @device = Device.includes(:ips, :macs, :model, :brand, :plugin, :hive_queues, :related_devices => [ :ips, :macs, :model, :brand, :plugin, :hive_queues ]).find(params['id'])
+          @device = Device.includes(:ips, :macs, :model,
+                                    :brand, :plugin,
+                                    :hive_queues,
+                                    related_devices: %i[ips macs model brand plugin hive_queues])
+                          .find(params['id'])
         end
       end
     end
@@ -52,8 +56,7 @@ class DevicesController < ApplicationController
   end
 
   # GET /devices/1/edit
-  def edit
-  end
+  def edit; end
 
   # POST /devices
   # POST /devices.json
@@ -96,22 +99,24 @@ class DevicesController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_device
-      @device = Device.find(params[:id])
-    end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def device_params
-      params.require(:device).permit(
-        :name,
-        :serial,
-        :asset_id,
-        :alternative,
-        :model_id,
-        { group_ids: [] },
-        macs: [],
-        ips: [],
-      )
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_device
+    @device = Device.find(params[:id])
+  end
+
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def device_params
+    params.require(:device)
+          .permit(
+            :name,
+            :serial,
+            :asset_id,
+            :alternative,
+            :model_id,
+            { group_ids: [] },
+            macs: [],
+            ips: []
+          )
+  end
 end

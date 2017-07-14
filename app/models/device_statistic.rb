@@ -2,7 +2,7 @@ class DeviceStatistic < ActiveRecord::Base
   belongs_to :device
 
   def value
-    case self.format
+    case format
     when 'integer'
       read_attribute(:value).to_i
     when 'timestamp'

@@ -24,31 +24,34 @@ class Api::DevicesController < ApplicationController
     device_id = @device ? @device.id : nil
 
     device_type = params[:device][:device_type] || 'unknown'
-    if params[:device][:brand] and params[:device][:model]
+    if params[:device][:brand] && params[:device][:model]
       create_parameters[:model] = Model.find_or_create_by(
         name: params[:device][:model],
         brand: Brand.find_or_create_by(name: params[:device][:brand]),
-        device_type: DeviceType.find_or_create_by(classification: device_type),
+        device_type: DeviceType.find_or_create_by(classification: device_type)
       )
     end
 
     device_id ||= params['device']['id']
-    if device_id and @device = Device.find_by(id: device_id)
+
+    if device_id && (@device = Device.find_by(id: device_id))
       status = :accepted
       @device.update(create_parameters)
-      @device.set_os(
-        name: params[:device][:operating_system_name],
-        version: params[:device][:operating_system_version]
-      ) if params[:device].has_key?(:operating_system_name) || params[:device].has_key?(:operating_system_version)
+      if params[:device].key?(:operating_system_name) || params[:device].key?(:operating_system_version)
+        @device.set_os(
+          name: params[:device][:operating_system_name],
+          version: params[:device][:operating_system_version]
+        )
+      end
       if @device.plugin
         filtered_params = params[:device].clone
         filtered_params.delete(:id)
-        filtered_params[:id] = filtered_params[:plugin_id] if filtered_params.has_key?(:plugin_id)
+        filtered_params[:id] = filtered_params[:plugin_id] if filtered_params.key?(:plugin_id)
         obj = @device.plugin.class
         @device.plugin.update(obj.plugin_params(filtered_params))
       end
     else
-      if params[:device].has_key?(:device_type)
+      if params[:device].key?(:device_type)
         begin
           obj = Object.const_get("HiveMind#{params[:device][:device_type].capitalize}::Plugin")
           # Filter parameters for plugin
@@ -56,17 +59,17 @@ class Api::DevicesController < ApplicationController
           #   plugin_id -> id
           filtered_params = params[:device].clone
           filtered_params.delete(:id)
-          filtered_params[:id] = filtered_params[:plugin_id] if filtered_params.has_key?(:plugin_id)
+          filtered_params[:id] = filtered_params[:plugin_id] if filtered_params.key?(:plugin_id)
 
           create_parameters[:plugin] = obj.create(obj.plugin_params(filtered_params))
           create_parameters[:name] ||= create_parameters[:plugin].name
         rescue NameError
-          logger.debug "Unknown device type"
+          logger.debug 'Unknown device type'
         end
       end
 
-      if create_parameters.length > 0
-        @device= Device.create(create_parameters)
+      if !create_parameters.empty?
+        @device = Device.create(create_parameters)
         @device.set_os(
           name: params[:device][:operating_system_name],
           version: params[:device][:operating_system_version]
@@ -76,7 +79,7 @@ class Api::DevicesController < ApplicationController
       end
     end
 
-    if [:accepted, :created].include?(status)
+    if %i[accepted created].include?(status)
       if @device.save
         @device.heartbeat
         render 'devices/show', status: status
@@ -93,13 +96,17 @@ class Api::DevicesController < ApplicationController
     poll_type = params[:poll][:poll_type] || 'active'
     begin
       reporting_device = Device.includes(:model, :brand).find(params[:poll][:id])
-      if params[:poll][:devices].present? and params[:poll][:devices].length > 0
+      if params[:poll][:devices].present? && !params[:poll][:devices].empty?
         # Reporting a list of devices
         @device_actions = {}
-        @devices = Device.includes(:ips, :macs, :brand, :plugin, :model => [:device_type] ).where( id: params[:poll][:devices] ).group_by { |d| d.model && d.model.device_type }
-        @devices.collect{|_,v| v }.flatten.each do |d|
+        @devices = Device.includes(:ips, :macs, :brand, :plugin, model: [:device_type])
+                         .where(id: params[:poll][:devices])
+                         .group_by { |d| d.model && d.model.device_type }
+
+        @devices.collect { |_, v| v }.flatten.each do |d|
           @device_actions[d.id] = poll_device d, reported_by: reporting_device, poll_type: poll_type
         end
+
         render 'devices/index', status: :ok
       else
         # Reporting a single device
@@ -115,7 +122,7 @@ class Api::DevicesController < ApplicationController
   # PUT /action
   def action
     status = :ok
-    if ( action = DeviceAction.order(id: :desc).find_by(action_params) ) && action.executed_at == nil
+    if (action = DeviceAction.order(id: :desc).find_by(action_params)) && action.executed_at.nil?
       status = :already_reported
     else
       status = DeviceAction.create(action_params).valid? ? :ok : :unprocessable_entity
@@ -128,14 +135,14 @@ class Api::DevicesController < ApplicationController
   def hive_queues
     status = :ok
     device = Device.find(params[:device_id])
-    device.hive_queues = params[:hive_queues] ? params[:hive_queues].select { |q| q.to_s != '' }.map { |q| hq = HiveQueue.find_or_create_by(name: q) } : []
+    device.hive_queues = params[:hive_queues] ? params[:hive_queues].reject { |q| q.to_s == '' }.map { |q| hq = HiveQueue.find_or_create_by(name: q) } : []
     device.save
     render json: {}, status: status
   end
 
   def screenshot
     device = Device.find(params[:device_action][:device_id])
-    render json: {}, status: :unprocessable_entity unless ( device.plugin && device.plugin.methods.include?(:screenshot))
+    render json: {}, status: :unprocessable_entity unless device.plugin && device.plugin.methods.include?(:screenshot)
     status = :ok
     device.plugin.screenshot = "data:image/png;base64, #{params[:device_action][:screenshot]}"
     device.plugin.save
@@ -146,9 +153,9 @@ class Api::DevicesController < ApplicationController
   def update_state
     status = :ok
     if state_params[:state] == 'clear'
-      if state_params.has_key? :device_id
-        conditions = [ 'device_id = ?' ]
-        args = [ state_params[:device_id] ]
+      if state_params.key? :device_id
+        conditions = ['device_id = ?']
+        args = [state_params[:device_id]]
 
         if state_params[:level].present?
           conditions << 'state <= ?'
@@ -167,7 +174,7 @@ class Api::DevicesController < ApplicationController
         #     ]
         args.unshift(conditions.join(' AND '))
         DeviceState.delete_all(args)
-      elsif state_params.has_key? :state_ids
+      elsif state_params.key? :state_ids
         DeviceState.delete(state_params[:state_ids])
       else
         status = :unprocessable_entity
@@ -180,44 +187,48 @@ class Api::DevicesController < ApplicationController
   end
 
   private
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def device_params
-      params.require(:device).permit(
-        :name,
-        :serial,
-        :asset_id,
-        :alternative,
-        :model_id,
-        { group_ids: [] },
-        macs: [],
-        ips: [],
-      )
-    end
 
-    def action_params
-      params.require(:device_action).permit(
-        :device_id,
-        :action_type,
-        :body,
-        :screenshot
-      )
-    end
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def device_params
+    params.require(:device)
+          .permit(
+            :name,
+            :serial,
+            :asset_id,
+            :alternative,
+            :model_id,
+            { group_ids: [] },
+            macs: [],
+            ips: []
+          )
+  end
 
-    def state_params
-      params.require(:device_state).permit(
-        :device_id,
-        :component,
-        :state,
-        :level,
-        :message,
-        state_ids: []
-      )
-    end
+  def action_params
+    params.require(:device_action)
+          .permit(
+            :device_id,
+            :action_type,
+            :body,
+            :screenshot
+          )
+  end
 
-    def poll_device d, options = {}
-      opts = {}
-      opts[:reported_by] = options[:reported_by] if options.has_key? :reported_by
-      d.heartbeat opts
-      options[:poll_type] == 'active' ? d.execute_action : nil
-    end
+  def state_params
+    params.require(:device_state)
+          .permit(
+            :device_id,
+            :component,
+            :state,
+            :level,
+            :message,
+            state_ids: []
+          )
+  end
+
+  def poll_device(d, options = {})
+    opts = {}
+    opts[:reported_by] = options[:reported_by] if options.key? :reported_by
+    d.heartbeat opts
+    options[:poll_type] == 'active' ? d.execute_action : nil
+  end
 end

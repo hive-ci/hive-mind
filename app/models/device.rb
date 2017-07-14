@@ -1,7 +1,6 @@
 class Device < ActiveRecord::Base
-  
   include DeviceStatus
-  
+
   belongs_to :model
   has_one :brand, through: :model
   has_many :macs, dependent: :delete_all
@@ -15,22 +14,22 @@ class Device < ActiveRecord::Base
   has_and_belongs_to_many :hive_queues
   accepts_nested_attributes_for :groups
   has_many :relationships, foreign_key: :primary_id
-  has_many :related_devices, through: :relationships, foreign_key: :primary_id, primary_key: :secondary_id, class_name: "Device", source: :secondary
+  has_many :related_devices, through: :relationships, foreign_key: :primary_id, primary_key: :secondary_id, class_name: 'Device', source: :secondary
   has_many :device_statistics
   has_many :device_states
 
-  scope :classification, ->(classification){joins( model: :device_type).where('device_types.classification=?', classification) }
+  scope :classification, ->(classification) { joins(model: :device_type).where('device_types.classification=?', classification) }
 
   def mac_addresses
-    self.macs.map { |m| m.mac }
+    macs.map(&:mac)
   end
 
   def ip_addresses
-    self.ips.map { |i| i.ip }
+    ips.map(&:ip)
   end
 
-  def latest_stat options
-    if stat = self.device_statistics.where(label: options[:label]).order(:timestamp).last
+  def latest_stat(options)
+    if stat = device_statistics.where(label: options[:label]).order(:timestamp).last
       stat.value
     else
       options[:default] || nil
@@ -38,10 +37,10 @@ class Device < ActiveRecord::Base
   end
 
   def details
-    details = ( self.plugin && self.plugin.methods.include?(:details) ) ? self.plugin.details : {}
+    details = plugin && plugin.methods.include?(:details) ? plugin.details : {}
     {
-      brand: self.model && self.model.brand && self.model.brand.name,
-      model: self.model && self.model.name,
+      brand: model && model.brand && model.brand.name,
+      model: model && model.name,
       macs: mac_addresses,
       ips: ip_addresses
     }.merge(details)
@@ -51,28 +50,28 @@ class Device < ActiveRecord::Base
     model && model.device_type && model.device_type.classification
   end
 
-  def heartbeat options = {}
+  def heartbeat(options = {})
     Heartbeat.create(
       device: self,
-      reporting_device: (options.has_key?(:reported_by) ? options[:reported_by] : self)
+      reporting_device: (options.key?(:reported_by) ? options[:reported_by] : self)
     )
   end
 
   def seconds_since_heartbeat
-    if ! @seconds_since_heartbeat && hb = self.heartbeats.last
+    if !@seconds_since_heartbeat && hb = heartbeats.last
       @seconds_since_heartbeat = (Time.now - hb.created_at).to_i
     end
     @seconds_since_heartbeat
   end
 
   def execute_action
-    if ac = self.device_actions.where(executed_at: nil).first
+    if ac = device_actions.where(executed_at: nil).first
       ac.update(executed_at: Time.now)
     end
     ac
   end
 
-  def add_relation relation, secondary
+  def add_relation(relation, secondary)
     Relationship.find_or_create_by(
       primary: self,
       secondary: secondary,
@@ -80,7 +79,7 @@ class Device < ActiveRecord::Base
     )
   end
 
-  def delete_relation relation, secondary
+  def delete_relation(relation, secondary)
     Relationship.delete_all(
       primary: self,
       secondary: secondary,
@@ -89,33 +88,33 @@ class Device < ActiveRecord::Base
   end
 
   def plugin_json_keys
-    ( self.plugin && self.plugin.methods.include?(:json_keys) ) ? self.plugin.json_keys : []
+    plugin && plugin.methods.include?(:json_keys) ? plugin.json_keys : []
   end
 
-  def self.identify_existing options = {}
-    if options.has_key?(:device_type)
+  def self.identify_existing(options = {})
+    if options.key?(:device_type)
       begin
         obj = Object.const_get("HiveMind#{options[:device_type].capitalize}::Plugin")
         if obj.methods.include? :identify_existing
           return obj.identify_existing(options)
         end
       rescue NameError
-        logger.info "Unknown device type"
+        logger.info 'Unknown device type'
       end
     end
 
-    if options.has_key?(:macs)
+    if options.key?(:macs)
       options[:macs].compact.each do |m|
         return Device.find(m.device_id) if m.device_id
       end
     end
-    return nil
+    nil
   end
 
-  def set_os options = {}
+  def set_os(options = {})
     os = OperatingSystem.find_or_create_by(name: options[:name], version: options[:version])
-    if os != self.operating_system
-      self.operating_system_histories.select{ |o| o.end_timestamp == nil }.each do |osh|
+    if os != operating_system
+      operating_system_histories.select { |o| o.end_timestamp.nil? }.each do |osh|
         osh.end_timestamp = Time.now
         osh.save
       end
@@ -124,14 +123,13 @@ class Device < ActiveRecord::Base
         operating_system: os,
         start_timestamp: Time.now
       )
-      self.reload
+      reload
     end
   end
-
 
   def operating_system
     # Note, .last gets the most recently created entry in the OperatingSystem
     # model and this is not necessarily the latest in the history of the device
-    self.operating_systems[-1]
+    operating_systems[-1]
   end
 end

@@ -1,26 +1,24 @@
 class ModelsController < ApplicationController
-  before_action :set_model, only: [:show, :edit, :update, :destroy]
+  before_action :set_model, only: %i[show edit update destroy]
 
   # GET /models/1
   # GET /models/1.json
   def show
     @devices = @model.devices
-    if params[:group] && params[:group] != ""
+    if params[:group] && params[:group] != ''
       @group = Group.find(params[:group].to_i)
       @devices = @devices.select { |device| device.groups.include?(@group) }
     end
-    
-    if params[:brand] && params[:brand] != ""
-      @brand = Brand.find(params[:brand].to_i)
-    else
-      @brand = @model.brand
-    end
-    
-    
-    if params[:device_type] && params[:device_type] != ""
+
+    @brand = if params[:brand] && params[:brand] != ''
+               Brand.find(params[:brand].to_i)
+             else
+               @model.brand
+             end
+
+    if params[:device_type] && params[:device_type] != ''
       @device_type = DeviceType.find(params[:device_type].to_i)
     end
-    
   end
 
   # GET /models/new
@@ -29,8 +27,7 @@ class ModelsController < ApplicationController
   end
 
   # GET /models/1/edit
-  def edit
-  end
+  def edit; end
 
   # POST /models
   # POST /models.json
@@ -73,13 +70,22 @@ class ModelsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_model
-      @model = Model.find(params[:id])
-    end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def model_params
-      params.require(:model).permit(:name, :description, :display_name, :img_url, :brand_id, :device_type_id)
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_model
+    @model = Model.find(params[:id])
+  end
+
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def model_params
+    params.require(:model)
+          .permit(
+            :name,
+            :description,
+            :display_name,
+            :img_url,
+            :brand_id,
+            :device_type_id
+          )
+  end
 end

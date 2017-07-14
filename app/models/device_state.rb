@@ -5,9 +5,9 @@ class DeviceState < ActiveRecord::Base
 
   validates :state, inclusion: { in: Logger::Severity::DEBUG..Logger::Severity::FATAL }
   validates :device, presence: true
-  validates_lengths_from_database only: [ :message ]
+  validates_lengths_from_database only: [:message]
 
-  def state= s
+  def state=(s)
     if s.is_a? String
       begin
         write_attribute(:state, Object.const_get("Logger::Severity::#{s.upcase}"))
@@ -36,7 +36,7 @@ class DeviceState < ActiveRecord::Base
     end
   end
 
-  def <=> other
-    self.state <=> other.state
+  def <=>(other)
+    state <=> other.state
   end
 end

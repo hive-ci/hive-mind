@@ -11,10 +11,10 @@ devices = YAML.load_file("#{pwd}/db/apple.yml")
 
 def self.register_devices(device_type, brand, devices)
   devices.each do |device_name, values|
-    Model.find_or_create_by(device_type: device_type, brand: brand, name: device_name )
+    Model.find_or_create_by(device_type: device_type, brand: brand, name: device_name)
     values.each do |variant, variant_values|
       Group.find_or_create_by(name: 'Variant', value: variant, description: variant_values['description'])
-      variant_values["models"].each do |models, model_description|
+      variant_values['models'].each do |models, model_description|
         models.split(',').each do |model|
           Group.find_or_create_by(name: 'Product Model', value: model, description: model_description)
         end
