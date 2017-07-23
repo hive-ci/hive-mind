@@ -33,7 +33,6 @@ class Api::DevicesController < ApplicationController
     end
 
     device_id ||= params['device']['id']
-
     if device_id && (@device = Device.find_by(id: device_id))
       status = :accepted
       @device.update(create_parameters)
@@ -99,14 +98,10 @@ class Api::DevicesController < ApplicationController
       if params[:poll][:devices].present? && !params[:poll][:devices].empty?
         # Reporting a list of devices
         @device_actions = {}
-        @devices = Device.includes(:ips, :macs, :brand, :plugin, model: [:device_type])
-                         .where(id: params[:poll][:devices])
-                         .group_by { |d| d.model && d.model.device_type }
-
+        @devices = Device.includes(:ips, :macs, :brand, :plugin, model: [:device_type]).where(id: params[:poll][:devices]).group_by { |d| d.model && d.model.device_type }
         @devices.collect { |_, v| v }.flatten.each do |d|
           @device_actions[d.id] = poll_device d, reported_by: reporting_device, poll_type: poll_type
         end
-
         render 'devices/index', status: :ok
       else
         # Reporting a single device
@@ -190,39 +185,36 @@ class Api::DevicesController < ApplicationController
 
   # Never trust parameters from the scary internet, only allow the white list through.
   def device_params
-    params.require(:device)
-          .permit(
-            :name,
-            :serial,
-            :asset_id,
-            :alternative,
-            :model_id,
-            { group_ids: [] },
-            macs: [],
-            ips: []
-          )
+    params.require(:device).permit(
+      :name,
+      :serial,
+      :asset_id,
+      :alternative,
+      :model_id,
+      { group_ids: [] },
+      macs: [],
+      ips: []
+    )
   end
 
   def action_params
-    params.require(:device_action)
-          .permit(
-            :device_id,
-            :action_type,
-            :body,
-            :screenshot
-          )
+    params.require(:device_action).permit(
+      :device_id,
+      :action_type,
+      :body,
+      :screenshot
+    )
   end
 
   def state_params
-    params.require(:device_state)
-          .permit(
-            :device_id,
-            :component,
-            :state,
-            :level,
-            :message,
-            state_ids: []
-          )
+    params.require(:device_state).permit(
+      :device_id,
+      :component,
+      :state,
+      :level,
+      :message,
+      state_ids: []
+    )
   end
 
   def poll_device(d, options = {})

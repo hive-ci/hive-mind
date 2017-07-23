@@ -30,6 +30,7 @@ group :development, :test, :integration do
   gem 'pry-byebug'
   gem 'rspec-rails', '~> 3.3'
   gem 'timecop'
+  gem 'meta_request'
 end
 
 group :development do

@@ -1,0 +1,5 @@
+desc 'Setup Hive Mind'
+task :setup do
+  sh 'rake db:create'
+  sh 'rake db:migrate'
+end

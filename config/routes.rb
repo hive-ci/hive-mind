@@ -1,9 +1,9 @@
 Rails.application.routes.draw do
-  get '/' => 'device_types#browse'
+  get '/'               => 'device_types#browse'
   get '/devices/search' => 'devices#search'
-  get '/dash/:ids' => 'devices#dash'
-  get 'browse' => 'device_types#browse'
-  get '/status' => 'application#status'
+  get '/dash/:ids'      => 'devices#dash'
+  get 'browse'          => 'device_types#browse'
+  get '/status'         => 'application#status'
 
   resources :device_types
   resources :groups
@@ -13,7 +13,7 @@ Rails.application.routes.draw do
 
   # Omniauth callbacks
   post '/auth/:provider/callback' => 'application#auth_callback'
-  get '/auth/:provider/callback' => 'application#auth_callback'
+  get '/auth/:provider/callback'  => 'application#auth_callback'
 
   get 'api/devices/:id', to: 'devices#show', defaults: { format: :json }
   get 'api/devices', to: 'devices#index', defaults: { format: :json }
