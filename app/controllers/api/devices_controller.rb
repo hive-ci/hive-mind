@@ -52,7 +52,8 @@ class Api::DevicesController < ApplicationController
     else
       if params[:device].key?(:device_type)
         begin
-          obj = Object.const_get("HiveMind#{params[:device][:device_type].capitalize}::Plugin")
+          plugin_type = params[:device][:device_type].casecmp('tablet').zero? ? 'Mobile' : params[:device][:device_type]
+          obj = Object.const_get("HiveMind#{plugin_type.capitalize}::Plugin")
           # Filter parameters for plugin
           #   id removed (this is the id in Device)
           #   plugin_id -> id
