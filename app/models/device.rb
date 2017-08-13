@@ -94,7 +94,8 @@ class Device < ActiveRecord::Base
   def self.identify_existing(options = {})
     if options.key?(:device_type)
       begin
-        obj = Object.const_get("HiveMind#{options[:device_type].capitalize}::Plugin")
+        plugin_type = options[:device_type].casecmp('tablet').zero? ? 'Mobile' : options[:device_type]
+        obj = Object.const_get("HiveMind#{plugin_type.capitalize}::Plugin")
         if obj.methods.include? :identify_existing
           return obj.identify_existing(options)
         end

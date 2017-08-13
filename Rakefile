@@ -4,3 +4,9 @@
 require File.expand_path('../config/application', __FILE__)
 
 Rails.application.load_tasks
+
+task :setup do
+  sh 'rake db:drop'
+  sh 'rake db:create'
+  sh 'rake db:migrate'
+end
