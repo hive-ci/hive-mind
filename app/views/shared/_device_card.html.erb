@@ -1,7 +1,7 @@
     <div class="card card-device panel panel-default col-lg-3 col-md-4 col-sm-6 col-xs-12"
          href="<%= device_path(device) %>" >
       <div class="card-body">
-        
+
         <div class="row card-info-banner">
           <div class="pull-right">
           <% if device.asset_id && !device.asset_id.empty? %>
@@ -12,19 +12,23 @@
           <span class="device-id label"><%= device.id -%></span>
           </div>
         </div>
-        
-        
+
+
         <h2><%= device.name -%></h2>
         <% if device.serial && !device.serial.empty? %>
         <p class="lead"><code><%= device.serial -%></code></p>
         <% end %>
-      
-        <p><%= device.model.brand.best_name %> <%= device.model.best_name %>
+
+        <p>
+          <% unless device.model.nil? %>
+          <%= device.model.brand.best_name %> <%= device.model.best_name %>
+          <% end %>
+
         <% if device.operating_system && device.operating_system.name %>
         - <em><%= display_operating_system(device) %></em>
         <% end %>
         </p>
-        
+
         <% if size != :condensed %>
           <% if device.plugin %>
             <%= render("shared/#{device.device_type.downcase}_plugin_partial", device: device) rescue nil -%>
@@ -38,13 +42,13 @@
             </ul>
           </p>
         <% end %>
-      
+
       <% if size == :edit %>
         <div class="card-buttons pull-right">
       <%= link_to raw('<button class="btn btn-default"><span class="glyphicon glyphicon-edit" aria-hidden="true"></button>'), edit_device_path(device) %>
         </div>
       <% end %>
 
-      
+
       </div>
     </div>
