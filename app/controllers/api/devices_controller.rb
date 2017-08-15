@@ -20,6 +20,9 @@ class Api::DevicesController < ApplicationController
         mac = Mac.find_or_create_by(mac: m) if m.present?
       end.compact
     end
+
+    create_parameters[:serial] ||= params[:device][:serial]
+
     @device = Device.identify_existing(params[:device].merge(create_parameters))
     device_id = @device ? @device.id : nil
 
